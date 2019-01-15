@@ -14,4 +14,4 @@ Machine:        Name:       Building:      IP:
 
 **FOR SET VALUES: (like building)--> Marked array of possible values (1 will indicate a 'yes')
 
-
+THEN use CSV file to help classify with TensorFlow/Keras/machine learning algorithms
