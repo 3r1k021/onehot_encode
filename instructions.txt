@@ -1,0 +1,17 @@
+Loop through ALL manifest files
+
+Save as output as CSV File
+
+CSV:
+
+Machine:        Name:       Building:      IP:
+-----------------------------------------------
+123           
+834           [4,2,5]
+133           [0,2,4]
+
+
+
+**FOR SET VALUES: (like building)--> Marked array of possible values (1 will indicate a 'yes')
+
+
