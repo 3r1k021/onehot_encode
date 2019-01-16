@@ -1,0 +1,18 @@
+#XSD Function ("rhstsvc")-->View BAS calls and return values
+#https://bbgithub.dev.bloomberg.com/DCSI/salt/blob/master/pillar/sbb/networks.sls
+#Above: network/cloud values for array
+#https://www.kaggle.com/parthsuresh/binary-classifier-using-keras-97-98-accuracy
+
+import basnet
+
+#Connect to bass network
+if self.use_basnet_proxy is True:
+	client = basnet.BasClient("rhstsvc", 2, 9, host=self.options["basnet_proxy"])
+else:
+	client = basnet.BasClient("rhstsvc", 2, 9)
+
+#Write Request
+req = {"getMachineList": {}}
+
+#Send request & recieve data
+hosts = client.sendRequest(req)
