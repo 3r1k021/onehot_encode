@@ -6,12 +6,23 @@ CSV:
 
 Machine:        Name:       Building:      IP:
 -----------------------------------------------
-123           
+123           [1,0,1]
 834           [4,2,5]
 133           [0,2,4]
 
-
+***Need buildCSV function: Make sure every attribute is IN ORDER!!!
 
 **FOR SET VALUES: (like building)--> Marked array of possible values (1 will indicate a 'yes')
 
-THEN use CSV file to help classify with TensorFlow/Keras/machine learning algorithms
+Unique Variables:
+-hostname
+-cluster
+-parentcluster
+-
+
+Discrete Variables:
+-building (inside "sqr" object)--->['ridge road', 'orangeburg', 'piscataway'.....]
+-cloud--->['prod','dev'.......]
+-
+
+	
