@@ -16,7 +16,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import cross_val_score
 
 # Read data file
-data = pd.read_csv("../input/data.csv", header=0)
+data = pd.read_csv("training.csv", header=0)
 seed = 5
 numpy.random.seed(seed)
 
