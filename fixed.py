@@ -133,4 +133,6 @@ for file in os.listdir(directory):
         all_data.append(relevant)
 create_csv(all_data)
 #Data is ready to go into .csv file
+                   
+                   #https://www.ritchieng.com/machinelearning-one-hot-encoding/
 
