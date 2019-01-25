@@ -1,9 +1,10 @@
-# Import libraries for data wrangling, preprocessing and visualization
+
 import numpy
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-%matplotlib inline
+#from IPython import get_ipython
+#get_ipython().run_line_magic('matplotlib','inline')
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
@@ -38,7 +39,7 @@ encoded_Y = encoder.transform(Y)
 def create_baseline():
     # create model
     model = Sequential()
-    model.add(Dense(10, input_dim=30, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(15, input_dim=11, kernel_initializer='normal', activation='relu'))
     model.add(Dense(1, kernel_initializer='normal', activation='sigmoid'))
     # Compile model. We use the the logarithmic loss function, and the Adam gradient optimizer.
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -50,6 +51,7 @@ estimators = []
 estimators.append(('standardize', StandardScaler()))
 estimators.append(('mlp', KerasClassifier(build_fn=create_baseline, epochs=100, batch_size=5, verbose=0)))
 pipeline = Pipeline(estimators)
-kfold = StratifiedKFold(n_splits=10, shuffle=True)
+kfold = StratifiedKFold(n_splits=5, shuffle=True)
 results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
 print("Results: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+
