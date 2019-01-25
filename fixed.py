@@ -13,17 +13,14 @@ def encode(data):
     # integer encoding (returns numerical representation of char)
     if type(data) is int or type(data) is NoneType:
         data = str(data)
-    
-def encode(data):
-    # integer encoding (returns numerical representation of char
-     if type(data) is int or type(data) is NoneType:
-        data = str(data)
     int_encode = [char_to_int[char] for char in data]
-    num_string='0.'
-    for num in int_encode:
-        num_string+=str(num)
-    data_val="%.60f" % float(num_string)
-    return data_val
+    # one hot encode
+    onehot_encode = list()
+    for value in int_encode:
+        letter = [0 for _ in range(len(values))]
+        letter[value] = 1
+        onehot_encode.append(letter)
+    return onehot_encode
 
 
 # End encode
@@ -87,8 +84,30 @@ def pull_data(data, desired):
                     new_list[key] = val
 
     return new_list
+input_vals=['hostname','cluster','parentcluster','building','cloud','spec','manufacturer','dc','model','owners','tags']
+def create_csv(input_data):
+    try:
+        with open('training_data.csv','x') as file:
+            file.write('hostname,cluster,parentcluster,building,cloud,spec,manufacturer,dc,model,owners,tags,under_utilized')
+            file.close()
+    except:
+        #File already exists
 
-def condense_data(bigData): #Cuts down length of arrays by optimizing discrete/preknown values into shorter lists
+    for obj in input_data:
+        csv_line=[]
+        ind=0
+        for key,val in obj:
+            if key==input_vals[ind]:
+                #Key is included, good to add
+                csv_line.append(val)
+            else:
+                #Desired key missing: not found in manifest data. Add blank space
+                csv_line.append("")
+        csv_line=','.joing(csv_line)
+        with open('training_data.csv','a') as file:
+            file.write(csv_line)
+            file.close()
+
 
 directory='manifest_training'
 
@@ -100,9 +119,8 @@ for file in os.listdir(directory):
     if filename.endswith(".manifest"):
         fileOpen=open(directory+'/'+filename).read()
         fulldata = json.loads(fileOpen)
-        relevant = pull_data(fulldata, ['hostname', 'cluster', 'parentcluster','building','cloud','spec','manufacturer','dc','model','owners'])
+        relevant = pull_data(fulldata, input_vals)
         #Write Request
-        relevant=condense_data(relevant)
         try:
             req = {"getMachine": relevant['hostname']
             #Send request & recieve data
@@ -110,8 +128,9 @@ for file in os.listdir(directory):
             relevant['tags']=hosts['tags']
         except:
             #Machine is no longer in RHST-> Ignore tags
-        relevant = encode_all(relevant)
+        #relevant = encode_all(relevant)
         #Adds each server object into the array containing all data
         all_data.append(relevant)
-
+create_csv(all_data)
 #Data is ready to go into .csv file
+
