@@ -13,14 +13,17 @@ def encode(data):
     # integer encoding (returns numerical representation of char)
     if type(data) is int or type(data) is NoneType:
         data = str(data)
+    
+def encode(data):
+    # integer encoding (returns numerical representation of char
+     if type(data) is int or type(data) is NoneType:
+        data = str(data)
     int_encode = [char_to_int[char] for char in data]
-    # one hot encode
-    onehot_encode = list()
-    for value in int_encode:
-        letter = [0 for _ in range(len(values))]
-        letter[value] = 1
-        onehot_encode.append(letter)
-    return onehot_encode
+    num_string='0.'
+    for num in int_encode:
+        num_string+=str(num)
+    data_val="%.60f" % float(num_string)
+    return data_val
 
 
 # End encode
