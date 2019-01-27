@@ -84,29 +84,38 @@ def pull_data(data, desired):
                     new_list[key] = val
 
     return new_list
+
+
 input_vals=['hostname','cluster','parentcluster','building','cloud','spec','manufacturer','dc','model','owners','tags']
 def create_csv(input_data):
     try:
         with open('training_data.csv','x') as file:
-            file.write('hostname,cluster,parentcluster,building,cloud,spec,manufacturer,dc,model,owners,tags,under_utilized')
+            file.write(','.join(input_vals)+',under_utilized')
             file.close()
     except:
         #File already exists
-
+        print('error')
     for obj in input_data:
         csv_line=[]
-        ind=0
-        for key,val in obj:
-            if key==input_vals[ind]:
-                #Key is included, good to add
-                csv_line.append(val)
-            else:
-                #Desired key missing: not found in manifest data. Add blank space
-                csv_line.append("")
-        csv_line=','.joing(csv_line)
+        for attr in input_vals:
+            csv_line.append(obj.get(attr,""))
+        str_line=''
+        for v in csv_line:
+            va=v
+            #Makes lists into proper strings
+            if type(v) is list:
+                va='['
+                for obj in v:
+                    va+=str(obj)+','
+                va=va[0:-1]+']'
+            #End of list handling
+            str_line+=(va+',')
         with open('training_data.csv','a') as file:
-            file.write(csv_line)
+            file.write('\n'+str_line+'1')
             file.close()
+
+
+
 
 
 directory='manifest_training'
