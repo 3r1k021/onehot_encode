@@ -1,1 +1,18 @@
-https://stackoverflow.com/questions/2835559/parsing-values-from-a-json-file
+
+
+https://towardsdatascience.com/smarter-ways-to-encode-categorical-data-for-machine-learning-part-1-of-3-6dca2f71b159
+https://chrisalbon.com/machine_learning/preprocessing_structured_data/one-hot_encode_features_with_multiple_labels/
+https://medium.com/datadriveninvestor/improve-your-classification-models-using-mean-target-encoding-a3d573df31e8
+https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MultiLabelBinarizer.html
+https://docs.scipy.org/doc/numpy-1.15.1/reference/generated/numpy.column_stack.html
+https://pkghosh.wordpress.com/2017/10/09/combating-high-cardinality-features-in-supervised-machine-learning/
+
+def trim_data(data):
+    for key,val in data:
+        #Checks each case
+        if key in ['hostname','model']:
+            
+        elif key in 'cluster':
+        
+        elif key i
+#NOT SURE ABOUT 'SPEC' YET
