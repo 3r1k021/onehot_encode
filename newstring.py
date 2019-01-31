@@ -31,10 +31,10 @@ def group_words(list_words):
 
 
 orig_order=[]
-orig_total=['erik','bobby','erin','maxwell','wellman','erick','bob','ryan','eric','maxwen','brobb','bryan']
+orig_total=['erik','bobby','erin','maxwell','wellman','erick','bob','ryan','eric','maxwen','brobb','bryan','maximus','henry']
 for gr in group_words(['erik','bobby','erin','maxwell','wellman','erick','bob','ryan','eric','maxwen','brobb','bryan']):
-    print (gr)
-    for w in gr:
-        orig_order.append(orig_total.index(w))
-        print (orig_total.index(w))
+    for w in gr[1:]:
+        orig_total=[gr[0] if x in gr else x for i,x in enumerate(orig_total)]
+print orig_total
+ 
     
