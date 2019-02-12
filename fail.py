@@ -12,22 +12,25 @@ def pull_data(data, desired):
     if type(data) is dict:
         for key, val in data.items():
             if type(val) is dict:
-                to_add = pull_data(val,desired)  # Data type in value is another list or dict, so go another layer deeper
+                to_add = pull_data(val,
+                                   desired)  # Data type in value is another list or dict, so go another layer deeper
                 for k, v in to_add.items():
                     new_list[k] = v
             else:
-                if type(val) is list:  # Goes through lists to check for special cases wherein important dicts. lie within lists
+                if type(
+                        val) is list:  # Goes through lists to check for special cases wherein important dicts. lie within lists
                     for values in val:
                         if type(values) is dict:
                             to_add = pull_data(values, desired)
                             for k, v in to_add.items():
                                 new_list[k] = v
-                                if key in desired:
-                                    new_list[key] = val
+                if key in desired:
+                    new_list[key] = val
+
     return new_list
 
 
 
-print (pull_data(data,['cluster','hostname','owners']))
+print (pull_data(data,['cluster','hostname','owners','cloud','sbb','system_spec']))
 
-print (pull_data({'erik': {'cree': ['lee',{'dave': 5},6]}, 'maxwell': 44},['dave','maxwell']))
+print (pull_data({'erik': 5, 'dave': 3, 'maxwell': 7},['dave','maxwell']))
