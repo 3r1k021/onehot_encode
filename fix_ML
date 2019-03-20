@@ -1,0 +1,15 @@
+ones=False
+while len(tar) is not len(b):
+    if len(tar)>len(b):
+        try:
+            if int(tar[-1])==1:
+                ones=True
+        except:
+            error=-1
+
+        del tar[-1]
+    else:
+        tar.append(0)
+if ones:
+    del tar[-1]
+    tar.append(1)
