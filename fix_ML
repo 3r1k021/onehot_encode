@@ -1,15 +1,371 @@
-ones=False
-while len(tar) is not len(b):
-    if len(tar)>len(b):
-        try:
-            if int(tar[-1])==1:
-                ones=True
-        except:
-            error=-1
+import json
+import basnet
+import os,sys
+import learn
+import sqlite3
+import requests,re
+sys.path.append('../')
+from util import drqs
+from collections import defaultdict
+from db import reaperdb
 
-        del tar[-1]
-    else:
-        tar.append(0)
-if ones:
-    del tar[-1]
-    tar.append(1)
+class Gather(object):
+
+    def __init__(self,options,desired):
+        reaper_db_conn=reaperdb.ReaperDB(options)
+        reaper_db=reaper_db_conn.get_underutilized_hosts()
+        print (reaper_db)
+        self.dbfile=str(options['sqlite_dbfile'])
+        self.dpconn=None
+        if not self.create_sqlite_connection():
+            print('Cannot connect to database')
+        else:
+            #Successfully connected to DB
+            self.pull_sqlite_data(options,desired)
+
+
+    def create_sqlite_connection(self):
+        """
+        Create a database connection to the SQLite database specified by db_file
+        :return: Connection object or None"""
+        try:
+            self.dbconn = sqlite3.connect(self.dbfile)
+            return True
+        except Exception as e:
+            LOG.error(e)
+            self.dbconn = False
+            return False
+
+    def match(desired,cols):
+        numerical=[]
+        for name in cols:
+            try:
+                numerical.append(desired.index(name))
+            except Exception as e:
+                print (e)
+        return numerical
+
+
+    def gather_data(self,host,desired):
+        try:
+            SOR_API = "https://sor.bloomberg.com/sor/server/hostname/"
+            request = SOR_API + host.hostname
+            r = requests.get(request)
+            req=r.json()['server']
+            return pull_data(req,desired)
+        except Exception as e:
+            return e
+
+
+    def create_csv(self,input_data):
+        decom_count=0
+        nodecom_count=0
+        file_csv='/bb/data/dcreaper/ml/training_data.csv'
+        input_vals=['hostname','cluster','parentcluster','cloud','spec','manu','model','building','owners','tags','purpose']
+        try:
+            os.remove(file_csv) #New CSV is rewritten every run
+        except Exception as e:
+            ignore=-1  #Ignore, file is not created yet
+
+
+        try:
+            with open(file_csv,'w') as file:
+                file.write(','.join(input_vals)+',under_utilized')
+                file.close()
+        except Exception as e:
+            i=-1
+            print (e)
+        #File already exists
+
+        nodecom_current=0
+        for line in input_data:
+            for i,attr in enumerate(line):
+                if i==len(line)-1:
+                    if attr==0:
+                        nodecom_count+=1
+                    else:
+                        decom_count+=1
+
+        for line in input_data:
+
+            str_line=''
+            for attr in line:
+                str_line+=str(attr)+','
+            #Line is ready
+            str_line=str_line[0:-1]
+
+            last_not_decom=False
+            if int(str_line[-1])==0:
+                last_not_decom=True
+
+            if nodecom_current<int(decom_count+5) or last_not_decom is False:
+                if last_not_decom is True:
+                    nodecom_current+=1
+                with open(file_csv,'a') as file:
+                    file.write('\n'+str_line)
+                    file.close()
+        learn.load(file_csv)
+
+#End Create CSV Method
+    def get_training():
+
+        directory='manifest_training'
+        client = basnet.BasClient("rhstsvc", 2, 9)
+        all_data=[]
+        for file in os.listdir(directory):
+            try:
+                filename = os.fsdecode(file)
+                if filename.endswith(".manifest"):
+                    fileOpen=open(directory+'/'+filename).read()
+                    fulldata = json.loads(fileOpen)
+                    relevant = self.pull_data(fulldata, input_vals)
+                #Write Request
+                    try:
+                        req = {"getMachine": relevant['hostname']}
+                    #Send request & recieve data
+                        hosts=client.sendRequest(req)
+                        relevant['tags']=hosts['machine']['tags']
+                    except:
+                        relevant['tags']='null'
+            #Machine is no longer in RHST-> Ignore tags
+            #relevant = encode_allrelevant)
+            #Adds each try: server object into the array containing all data
+                    all_data.append(relevant)
+            except:
+                print ('Permission denied for this file: Skipping')
+        create_csv(all_data)
+        learn.load('training_data.csv')
+
+
+    def find_code(self,cur):
+         cur.execute('SELECT drqs FROM underutilized_hosts')
+         for num in cur.fetchall():
+             try:
+                 code_is=int(num)
+                 return code_is
+             except:
+                 continue
+
+
+    def pull_sqlite_data(self,options,desired):
+        full_data=[]
+        good=0
+        bad=0
+        client = basnet.BasClient("rhstsvc", 2, 9)
+        cur=self.dbconn.cursor()
+        cur.execute('SELECT hostname FROM underutilized_hosts')
+        full_selection=cur.fetchall()
+        for current_host_index,host in enumerate(full_selection):
+            nextA=''
+            sqlite_col=['hostname','cluster', 'parent_cluster','','sbb','manufacturer','model','datacenter','contacts']
+            line=[]
+            host_attr=self.gather_data(host[0],desired)
+            more=0
+            for ind,attr in enumerate(desired):
+                if type(host_attr) is not dict:
+                    #print ('not found in SOR')
+                    nextA='null'
+                else:
+                    nextA=host_attr.get(attr,'null')
+                if nextA is 'null':
+                    try:
+                        cur.execute('SELECT '+sqlite_col[ind]+' FROM underutilized_hosts')
+                        full_attr_cols=cur.fetchall()
+                        if sqlite_col[ind] is 'contacts':
+                            con_arr=full_attr_cols[current_host_index][0].split(',')
+                            nextA='['
+                            for wo in con_arr:
+                                nextA+=(wo+' ')
+                            nextA=nextA[0:-1]+']'
+                            #print (nextA)
+                        else:
+                            nextA=full_attr_cols[current_host_index][0]
+
+                    except Exception as e:
+                        ignore=1 #Only calls at blank col name
+
+                     #   print ('col not found')  #Still not found, remains null
+                #Try to pull from DB now
+                line.append(nextA)
+
+            try:
+                req = {"getMachine": host[0]}
+                # Send request & recieve data
+                hosts = client.sendRequest(req)
+                line.append(hosts['machine']['tags'])
+            except Exception as e:
+                line.append('null')
+
+            full_data.append(line)
+
+
+        #Now, gather the 'underutilized' determination from DRQS, using 'drqs' col values
+        cur.execute('SELECT drqs FROM underutilized_hosts')
+        drqs_list=cur.fetchall()
+        drqs_codes=[]
+        goods=[]
+        lost_rows=[]
+        for row,i in enumerate(drqs_list):
+            try:
+                index=int(i[0])
+                goods.append(index)
+                drqs_codes.append(index)
+            except:
+                lost_rows.append(row)
+                try:
+                    drqs_codes.append(goods[0])
+                except:
+                    drqs_codes.append(find_code(cur))
+
+        num_chunks=(len(drqs_codes)+19)/30
+        search_drqs = drqs.Drqs(options)
+        ticket_cache={}
+        for iteration, chunk in enumerate(chunks(list(drqs_codes), 30)):
+            #print('Querying DRQS chunk: %u / %u' % (iteration, num_chunks))
+            ticket_cache.update(search_drqs.poll_drqssvc(options["drqs_creator_uuid"], chunk))
+            #print('DRQS cache has %u items...' % len(ticket_cache))
+
+        ticket_dict={'wait':0,'vm':1,'igno':0,'deco':1}
+
+        index=0
+
+        tickets_all=list(ticket_cache.values())
+        insert_count=0
+        while len(tickets_all)>0:
+            insert_count+=1
+            if index in lost_rows:
+                full_data[index].append('null')
+            else:
+                ticket=tickets_all[0]
+                try:
+                    full_data[index].append(ticket_dict[ticket['header']['function'].lower()])
+                except:
+                    full_data[index].append('null')
+                del(tickets_all[0])
+            index+=1
+        accom=insert_count
+
+        if insert_count<len(drqs_codes):
+            for l in range(insert_count,len(drqs_codes)-1):
+                accom+=1
+                full_data[l].append('null')
+
+        #Done getting indicators
+
+        #Finally, check for manifest file needed to determine true underutilization
+
+        #manifest_list=os.listdir('/lanserv/data/evictor/')
+        #manifest_list = ['lanserv/data/evictor/' + item for item in manifest_list]
+
+        manifest_list=os.listdir('evictor-new/')
+        manifest_list = ['evictor-new/' + item for item in manifest_list]
+        filelist = list(filter(lambda x: not os.path.isdir(x), manifest_list))
+        cur.execute('SELECT serial FROM underutilized_hosts')
+        serial_all=cur.fetchall()
+        cur.execute('SELECT aliases FROM underutilized_hosts')
+        all_list=cur.fetchall()
+        for num,alias in enumerate(all_list):
+            all_names=[full_data[num][0]]
+            all_names.extend(list(alias[0].split(', ')))
+            serial=serial_all[num]
+            hostname_results=[]
+            serial_results=[]
+            for to_check in all_names:
+                try:
+                    if to_check is not '':
+                        hostname_regex = re.compile(r"(" + to_check + r")\..*")
+                        hostname_results = [m.group(0) for l in filelist for m in [hostname_regex.search(l)] if m]
+                except:
+                    excpt=1
+
+                if serial is not None:
+                    try:
+                        serial_regex = re.compile(r".*\.(" + serial + r")\..*")
+                        serial_results = [m.group(0) for l in filelist for m in [serial_regex.search(l)] if m]
+                    except:
+                        excpt=1
+
+                if len(hostname_results) > 0 or len(serial_results) > 0:
+                    break
+
+            if len(hostname_results) > 0 or len(serial_results) > 0:
+                good+=1
+                full_data[num].append(1)
+            else:
+                full_data[num].append(0)
+        #print ('decom: '+str(good)+'   no decom: '+str(bad))
+
+        #Put everything together
+        full=full_data
+        for row_ind, row_vals in enumerate(full):
+            for item_ind, item in enumerate(row_vals):
+                if type(item) is list:
+                    full_data[row_ind][item_ind]=to_string(item)
+        #Converts all to strings for CSV
+        self.create_csv(full_data)
+
+
+
+       # print (full_data)
+
+#            if more==1#More info is needed to fill all columns--Check database
+        #    full_data.append(line)
+
+        return 0
+def to_string(arr):
+    string='['
+    for a in arr:
+        string+=a+' '
+    string=string[0:-1]+']'
+    return string
+#End function: array to string
+
+def chunks(l, n):
+    """
+    Yield n-sized chunks from the list l
+    :param l:
+    :param n:
+    :return:
+    """
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+#End chunks
+
+def pull_data(data, desired):
+    try:
+        new_list = {}
+        if type(data) is dict:
+            for key, val in data.items():
+                if type(val) is dict:
+                    to_add = pull_data(val,desired)  # Data type in value is another list or di    ct, so go another layer deeper
+                    for k, v in to_add.items():
+                        if k not in new_list:
+                            new_list[k] = v
+                else:
+                    if type(val) is list:  # Goes through lists to check for special cases wherein i    mportant dicts. lie within lists
+                        for values in val:
+                            if type(values) is dict:
+                                to_add = pull_data(values, desired)
+                                for k, v in to_add.items():
+                                    if k not in new_list:
+                                        new_list[k] = v
+                    if key in desired:
+                        if key not in new_list:
+                            new_list[key] = val
+        return new_list
+    except Exception as e:
+        print (e)
+        return e
+
+options=dict()
+options['sqlite_dbfile']='/bb/data/dcreaper/db/dc-reaper-dev.sqlite'
+options['use_basnet_proxy']=False
+options['db_use_sqlite']=False
+options['db_use_comdb2']=True
+options['comdb2_name']='reaperdb'
+options['comdb2_tier']='dev'
+options['drqs_app']='dcreaper:09936FE9191C96E4224D9CC51FBDEFCF'
+options['drqs_service_uuid']=9338970
+options['drqs_creator_uuid']=23191190
+#Use this later in "classifier" file to call this script
+test_obj=Gather(options,['hostname', 'cluster', 'parent_cluster','cloud','system_spec','manufacturer','model','building','owners'])
