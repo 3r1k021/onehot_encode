@@ -1,47 +1,3 @@
-self.hostname = _hostname
-        self.aliases = list()
-        self.avg_underutil = None
-        self.cpu_underutil = None
-        self.mem_underutil = None
-        self.netin_underutil = None
-        self.netout_underutil = None
-        self.dcid = None
-        self.isvm = None
-        self.manufacturer = None
-        self.model = None
-        self.sbb = None
-        self.serial = None
-        self.datacenter = None
-        self.bdms_type = None
-        self.uuids = list()
-        self.datasources = list()
-        self.oktodecom = False
-        self.oktodecom_reason = None
-        self.ignore = False
-        self.powerdraw = 0
-        self.updated = {"datasources": dict(), "fields": dict(), "object": None}
-        self.cluster = None
-        self.cluster_desc = None
-        self.parentcluster = None
-        self.parentcluster_desc = None
-        self.inrhst = False
-        self.bbenvup = False
-        self.ips = list()
-        self.cloud = None
-        self.cloud_ip = None
-        self.cloud_subnet = None
-        self.networks = list()
-        self.sec_group = None
-        self.age = None
-        self.san = None
-        self.san_used = None
-        self.ptp = None
-        self.multicast = None
-        self.multicast_type = None
-        self.multicast_tags = list()
-        self.os_type = None
-        self.os_ver = None
-        self.os_xos = None
 
 class Gather(object):
     reaper_db = []
@@ -138,9 +94,13 @@ class Gather(object):
         csv_line.append(host_obj.cluster)
         csv_line.append(host_obj.parent_cluster)
         csv_line.append(host_obj.cloud)
-
-        data = pull_data(host_obj, des)
-        # Make into CSV-friendly format before passing to ML class
+        csv_line.append(host_obj.sbb)
+        csv_line.append(host_obj.manufacturer)
+        csv_line.append(host_obj.model)
+        csv_line.append(host_obj.datacenter)
+        csv_line.append('')
+        csv_line.append('')
+        csv_line.append(1)
         return learn.prediction(data)
 
     def find_code(self):
